@@ -1,0 +1,34 @@
+# Prometheus config for the image-captioning observability assignment.
+global:
+  scrape_interval: 5s        
+  evaluation_interval: 5s
+  external_labels:
+    project: captioning-observability
+
+rule_files:
+  - /etc/prometheus/alert_rules.yml
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  # The Streamlit app runs on the HOST (not in docker); /metrics is on port 8000.
+  # host.docker.internal is mapped to the host in docker-compose.yml (extra_hosts).
+  - job_name: captioning_app
+    static_configs:
+      - targets: ["host.docker.internal:8000"]
+        labels:
+          service: image-captioning
+
+  # node_exporter: system CPU / RAM / disk / network.
+  - job_name: node
+    static_configs:
+      - targets: ["node_exporter:9100"]
+        labels:
+          instance_name: visaka-laptop
